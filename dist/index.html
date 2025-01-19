@@ -10,14 +10,14 @@
   </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🐭</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🐓</text></svg>">
     <title>Jerry Liu</title>
     <style>
       body {
         margin: 0;
         overflow: hidden;
       }
-      .name-overlay {
+      .main-overlay {
         position: fixed;
         top: 5%;
         left: 5%;
@@ -33,7 +33,7 @@
         margin: 0;
         line-height: 1;
       }
-      .name-and-facts {
+      .name-info {
         display: flex;
         align-items: flex-start;
         gap: max(2vw, 8px);
@@ -44,40 +44,44 @@
         margin: 0;
         line-height: 1;
       }
-      .facts-container {
+      .info-container {
         display: flex;
         padding: max(1.2vw, 5px) 0;
         flex-direction: column;
         justify-content: space-between;
         height: max(6vw, 24px);
       }
-      .fact {
+      .info {
         font-size: max(1.5vw, 14px);
         font-weight: 300;
         margin: 0;
         line-height: 1;
         opacity: 0.8;
       }
-      .fact a {
+      .info a {
         color: rgba(255, 255, 255, 0.9);
         text-decoration: underline;
         pointer-events: auto;
         transition: opacity 0.2s ease;
       }
-      .fact a:hover {
+      .info a:hover {
         opacity: 0.7;
+      }
+      .small {
+        font-size: max(1.2vw, 11px);
+        opacity: 0.85;
       }
     </style>
 </head>
 <body>
-    <div class="name-overlay">
+    <div class="main-overlay">
       <h1 class="first-name">Jerry</h1>
-      <div class="name-and-facts">
+      <div class="name-info">
         <h1 class="last-name">Liu</h1>
-        <div class="facts-container">
-          <p class="fact">Software Developer at <a href="https://www.normative.io/" target="_blank">Normative</a></p>
-          <p class="fact">Based in Gothenburg, Sweden</p>
-          <p class="fact">Previously at <a href="https://www.recordedfuture.com/" target="_blank">Recorded Future</a></p>
+        <div class="info-container">
+          <p class="info">Software Developer <span class="small">at</span> <a href="https://www.normative.io/" target="_blank">Normative</a></p>
+          <p class="info"><span class="small">Based in</span> Gothenburg, Sweden</p>
+          <p class="info"><span class="small">Previously at</span> <a href="https://www.recordedfuture.com/" target="_blank">Recorded Future</a></p>
         </div>
       </div>
     </div>
