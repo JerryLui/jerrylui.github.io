@@ -1,0 +1,15 @@
+{
+  "imports": {
+    "@std/http": "jsr:@std/http@^1.0.12",
+    "three": "npm:three@^0.172.0",
+    "~/": "./src/"
+  },
+  "tasks": {
+    "build": "deno run -A src/build.ts",
+    "serve": "deno run -A src/serve.ts",
+    "dev": "deno run -A --watch=src/ src/build.ts & deno run -A src/serve.ts"
+  },
+  "compilerOptions": {
+    "lib": ["dom", "deno.window"]
+  }
+}
