@@ -7,6 +7,8 @@ class Ball {
     private readonly gravity: number = -9.82;
     private readonly dampening: number = 0.46;
     private readonly clickBoostVelocity: number = 3;
+    private readonly maxHeight: number = 5;
+    private readonly minHeight: number = 0.55;
 
     constructor(scene: THREE.Scene) {
         const geometry = new THREE.SphereGeometry(0.3, 32, 32);
@@ -22,18 +24,30 @@ class Ball {
     }
 
     onClick(): void {
-        // Add an upward boost to the current velocity
         this.velocity = this.clickBoostVelocity;
     }
 
     update(deltaTime: number): void {
+        // Apply gravity
         this.velocity += this.gravity * deltaTime;
+        
+        // Update position
         this.mesh.position.y += this.velocity * deltaTime;
 
-        // Bounce when hitting the ground (accounting for the ground's height of 0.25)
-        if (this.mesh.position.y <= 0.55) {
-            this.mesh.position.y = 0.55;
+        // Clamp position between min and max height
+        if (this.mesh.position.y >= this.maxHeight) {
+            this.mesh.position.y = this.maxHeight;
+            this.velocity = 0;
+        }
+        
+        // Bounce when hitting the ground
+        if (this.mesh.position.y <= this.minHeight) {
+            this.mesh.position.y = this.minHeight;
             this.velocity = -this.velocity * this.dampening;
+            // Stop completely if velocity is very small
+            if (Math.abs(this.velocity) < 0.01) {
+                this.velocity = 0;
+            }
         }
     }
 }
@@ -61,8 +75,8 @@ class Wire {
         this.setupEventListeners();
         
         this.ball = new Ball(this.scene);
-        this.lastTime = performance.now();
-        this.animate();
+        this.lastTime = performance.now() / 1000;
+        this.gameLoop();
     }
 
     private setupRenderer(): void {
@@ -137,14 +151,19 @@ class Wire {
         });
     }
 
-    private animate(): void {
-        const currentTime = performance.now();
-        const deltaTime = (currentTime - this.lastTime) / 1000; // Convert to seconds
+    private gameLoop(): void {
+        const currentTime = performance.now() / 1000;
+        let deltaTime = currentTime - this.lastTime;
+        
+        // If we've been away for too long, use a safe delta
+        if (deltaTime > 0.1) {
+            deltaTime = 1/60;
+        }
+        
         this.lastTime = currentTime;
-
         this.ball.update(deltaTime);
-        globalThis.requestAnimationFrame(() => this.animate());
         this.renderer.render(this.scene, this.camera);
+        globalThis.requestAnimationFrame(() => this.gameLoop());
     }
 }
 
