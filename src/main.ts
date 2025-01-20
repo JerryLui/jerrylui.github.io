@@ -46,16 +46,90 @@ class Wire {
 
     private createGround(): void {
         const groundGeometry = new THREE.BoxGeometry(10, 0.5, 10);
-        const materials = [
-            new THREE.MeshStandardMaterial({ color: 0x808080, roughness: 0.8 }), // right side
-            new THREE.MeshStandardMaterial({ color: 0x808080, roughness: 0.8 }), // left side
-            new THREE.MeshStandardMaterial({ color: 0xFFFFA0, roughness: 0.8 }), // top side
-            new THREE.MeshStandardMaterial({ color: 0x808080, roughness: 0.8 }), // front side
-            new THREE.MeshStandardMaterial({ color: 0x808080, roughness: 0.8 }), // back side
-        ];
+        const materials = this.createGroundMaterials();
         const ground = new THREE.Mesh(groundGeometry, materials);
         ground.receiveShadow = true;
         this.scene.add(ground);
+    }
+
+    private createGroundMaterials(): THREE.Material[] {
+        return [
+            this.createSedimentMaterial(), // right side
+            this.createSedimentMaterial(), // left side
+            new THREE.MeshStandardMaterial({ color: 0xFFFFA0, roughness: 0.8 }), // top side
+            this.createSedimentMaterial(), // bottom side
+            this.createSedimentMaterial(), // front side
+            this.createSedimentMaterial()  // back side
+        ];
+    }
+
+    private createSedimentMaterial(): THREE.Material {
+        const textureSize = 128;
+        const canvas = document.createElement('canvas');
+        canvas.width = textureSize;
+        canvas.height = textureSize;
+        
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return new THREE.MeshStandardMaterial({ color: 0x808080 });
+
+        const sedimentLayers = [
+            { color: '#D2B48C', name: 'Light tan' },
+            { color: '#8B7355', name: 'Medium brown' },
+            { color: '#6B4423', name: 'Dark brown' },
+            { color: '#463E3F', name: 'Deep brown' },
+            { color: '#2F1F1F', name: 'Almost black' }
+        ];
+
+        this.drawSedimentLayers(ctx, sedimentLayers, textureSize);
+
+        const texture = new THREE.CanvasTexture(canvas);
+        return new THREE.MeshStandardMaterial({ 
+            map: texture,
+            roughness: 0.9,
+            metalness: 0.1
+        });
+    }
+
+    private drawSedimentLayers(
+        ctx: CanvasRenderingContext2D, 
+        layers: Array<{ color: string, name: string }>, 
+        size: number
+    ): void {
+        const layerHeight = size / layers.length;
+        
+        layers.forEach((layer, index) => {
+            // Create gradient transition between layers
+            const gradient = ctx.createLinearGradient(
+                0, 
+                index * layerHeight, 
+                0, 
+                (index + 1) * layerHeight
+            );
+            gradient.addColorStop(0, layer.color);
+            gradient.addColorStop(1, layers[Math.min(index + 1, layers.length - 1)].color);
+            
+            // Draw base layer
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, index * layerHeight, size, layerHeight);
+            
+            // Add texture noise
+            this.addLayerNoise(ctx, index * layerHeight, layerHeight, size);
+        });
+    }
+
+    private addLayerNoise(
+        ctx: CanvasRenderingContext2D, 
+        startY: number, 
+        height: number, 
+        width: number,
+        noisePoints: number = 100
+    ): void {
+        ctx.fillStyle = 'rgba(0,0,0,0.1)';
+        for (let i = 0; i < noisePoints; i++) {
+            const x = Math.random() * width;
+            const y = startY + Math.random() * height;
+            ctx.fillRect(x, y, 1, 1);
+        }
     }
 
     private setupLights(): void {
