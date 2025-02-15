@@ -4,7 +4,7 @@ await esbuild.build({
   entryPoints: ['src/main.ts'],
   bundle: true,
   minify: true,
-  outfile: 'dist/main.js',
+  outfile: 'docs/main.js',
   format: 'esm',
   platform: 'browser',
   target: ['es2020'],
