@@ -2,7 +2,7 @@ import { serveDir } from "@std/http/file-server";
 
 Deno.serve(async (req) => {
   return await serveDir(req, {
-    fsRoot: "./dist",
+    fsRoot: "./docs",
     // enableCors: true,
     // mimeTypes: {
     //   "ts": "application/javascript",
