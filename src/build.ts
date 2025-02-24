@@ -8,5 +8,5 @@ await esbuild.build({
   format: 'esm',
   platform: 'browser',
   target: ['es2020'],
-  external: ['three'],
+  external: ['three']
 }); 

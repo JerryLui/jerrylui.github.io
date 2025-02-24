@@ -1,203 +1,145 @@
 /// <reference lib="dom" />
 import * as THREE from 'three';
-import { Ball, Cube } from './shapes.ts';
+import { OrbitControls } from 'https://unpkg.com/three@0.172.0/examples/jsm/controls/OrbitControls.js';
+import { GLTFLoader } from 'https://unpkg.com/three@0.172.0/examples/jsm/loaders/GLTFLoader.js';
 
-class Wire {
+class RoomScene {
     private scene: THREE.Scene;
     private camera: THREE.PerspectiveCamera;
     private renderer: THREE.WebGLRenderer;
-    private shapes: { mesh: THREE.Mesh, shape: Ball | Cube }[] = [];
-    private lastTime: number = 0;
-    private raycaster: THREE.Raycaster;
-    private mouse: THREE.Vector2;
+    private controls: OrbitControls;
+    private room: THREE.Group | null = null;
+    private pointLight: THREE.PointLight;
 
     constructor() {
+        // Initialize scene
         this.scene = new THREE.Scene();
-        this.camera = new THREE.PerspectiveCamera(45, globalThis.innerWidth / globalThis.innerHeight, 0.1, 1000);
-        this.renderer = new THREE.WebGLRenderer({ antialias: true });
-        this.raycaster = new THREE.Raycaster();
-        this.mouse = new THREE.Vector2();
+        this.camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        this.renderer = new THREE.WebGLRenderer({ 
+            antialias: true,
+            powerPreference: "high-performance",
+        });
         
-        this.setupRenderer();
-        this.createGround();
-        this.setupLights();
-        this.setupCamera();
-        this.setupEventListeners();
-        
-        // Create ball and cube
-        const ball = new Ball(this.scene);
-        const cube = new Cube(this.scene);
-        
-        this.shapes.push(
-            { mesh: ball.getMesh(), shape: ball },
-            { mesh: cube.getMesh(), shape: cube }
-        );
-        
-        this.lastTime = performance.now() / 1000;
-        this.loop();
-    }
-
-    private setupRenderer(): void {
-        this.renderer.setSize(globalThis.innerWidth, globalThis.innerHeight);
+        // Setup renderer with improved quality
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        globalThis.document.body.appendChild(this.renderer.domElement);
-    }
+        this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+        this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        this.renderer.toneMappingExposure = 1.0;
+        this.renderer.setPixelRatio(window.devicePixelRatio);
+        document.body.appendChild(this.renderer.domElement);
 
-    private createGround(): void {
-        const groundGeometry = new THREE.BoxGeometry(10, 0.5, 10);
-        const materials = this.createGroundMaterials();
-        const ground = new THREE.Mesh(groundGeometry, materials);
-        ground.receiveShadow = true;
-        this.scene.add(ground);
-    }
-
-    private createGroundMaterials(): THREE.Material[] {
-        return [
-            this.createSedimentMaterial(), // right side
-            this.createSedimentMaterial(), // left side
-            new THREE.MeshStandardMaterial({ color: 0xFFFFA0, roughness: 0.8 }), // top side
-            this.createSedimentMaterial(), // bottom side
-            this.createSedimentMaterial(), // front side
-            this.createSedimentMaterial()  // back side
-        ];
-    }
-
-    private createSedimentMaterial(): THREE.Material {
-        const textureSize = 128;
-        const canvas = document.createElement('canvas');
-        canvas.width = textureSize;
-        canvas.height = textureSize;
+        // Setup camera and controls for isometric view
+        this.camera.position.set(7.07, 12, 7.07);
+        this.camera.lookAt(0, 0, 0);
         
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return new THREE.MeshStandardMaterial({ color: 0x808080 });
-
-        const sedimentLayers = [
-            { color: '#D2B48C', name: 'Light tan' },
-            { color: '#8B7355', name: 'Medium brown' },
-            { color: '#6B4423', name: 'Dark brown' },
-            { color: '#463E3F', name: 'Deep brown' },
-            { color: '#2F1F1F', name: 'Almost black' }
-        ];
-
-        this.drawSedimentLayers(ctx, sedimentLayers, textureSize);
-
-        const texture = new THREE.CanvasTexture(canvas);
-        return new THREE.MeshStandardMaterial({ 
-            map: texture,
-            roughness: 0.9,
-            metalness: 0.1
-        });
-    }
-
-    private drawSedimentLayers(
-        ctx: CanvasRenderingContext2D, 
-        layers: Array<{ color: string, name: string }>, 
-        size: number
-    ): void {
-        const layerHeight = size / layers.length;
+        this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+        this.controls.enableDamping = true;
+        // this.controls.enableZoom = true;
+        // this.controls.enablePan = false;   
+        // this.controls.minPolarAngle = Math.PI / 4;  
+        // this.controls.maxPolarAngle = Math.PI / 3;
+        // this.controls.minAzimuthAngle = Math.PI / 4;  // Limit horizontal rotation
+        // this.controls.maxAzimuthAngle = Math.PI / 4;
         
-        layers.forEach((layer, index) => {
-            // Create gradient transition between layers
-            const gradient = ctx.createLinearGradient(
-                0, 
-                index * layerHeight, 
-                0, 
-                (index + 1) * layerHeight
-            );
-            gradient.addColorStop(0, layer.color);
-            gradient.addColorStop(1, layers[Math.min(index + 1, layers.length - 1)].color);
-            
-            // Draw base layer
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, index * layerHeight, size, layerHeight);
-            
-            // Add texture noise
-            this.addLayerNoise(ctx, index * layerHeight, layerHeight, size);
-        });
-    }
-
-    private addLayerNoise(
-        ctx: CanvasRenderingContext2D, 
-        startY: number, 
-        height: number, 
-        width: number,
-        noisePoints: number = 100
-    ): void {
-        ctx.fillStyle = 'rgba(0,0,0,0.1)';
-        for (let i = 0; i < noisePoints; i++) {
-            const x = Math.random() * width;
-            const y = startY + Math.random() * height;
-            ctx.fillRect(x, y, 1, 1);
-        }
+        // Add axes helper
+        const axesHelper = new THREE.AxesHelper(1); // Length of 1 unit
+        this.scene.add(axesHelper);
+        
+        // Add lights
+        this.setupLights();
+        
+        // Load room model
+        this.loadRoom();
+        
+        // Setup event listeners
+        this.setupEventListeners();
+        
+        // Start animation loop
+        this.animate();
     }
 
     private setupLights(): void {
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        // Increase ambient light intensity for better fill
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
         this.scene.add(ambientLight);
 
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-        directionalLight.position.set(0, 10, 0);
-        directionalLight.castShadow = true;
-        
-        directionalLight.shadow.camera.near = 0.1;
-        directionalLight.shadow.camera.far = 20;
-        directionalLight.shadow.camera.left = -5;
-        directionalLight.shadow.camera.right = 5;
-        directionalLight.shadow.camera.top = 5;
-        directionalLight.shadow.camera.bottom = -5;
-        directionalLight.shadow.mapSize.width = 1024;
-        directionalLight.shadow.mapSize.height = 1024;
-        
-        this.scene.add(directionalLight);
+        // Improved point light settings
+        const pointLight = new THREE.PointLight(0xffffff, 1.5, 100);
+        pointLight.castShadow = true;
+        pointLight.shadow.mapSize.width = 2048;
+        pointLight.shadow.mapSize.height = 2048;
+        pointLight.shadow.bias = -0.001;
+        this.scene.add(pointLight);
+
+        // const hemiLight = new THREE.HemisphereLight('#ADD8E6', 0x080820, 0.1);
+        // hemiLight.position.set(0, 20, 0);
+        // this.scene.add(hemiLight);
+
+        this.pointLight = pointLight;
     }
 
-    private setupCamera(): void {
-        this.camera.position.set(10, 12, 10);
-        this.camera.lookAt(0, 0, 0);
+    private loadRoom(): void {
+        const loader = new GLTFLoader();
+        loader.load(
+            'room.glb',
+            (gltf: { scene: THREE.Group }) => {
+                this.room = gltf.scene;
+                this.scene.add(this.room);
+                
+                // Improve material quality
+                this.room.traverse((object: THREE.Object3D) => {
+                    if (object.name === 'Lampshade' || object.name.includes('Lampshade')) {
+                        const worldPosition = new THREE.Vector3();
+                        object.getWorldPosition(worldPosition);
+                        this.pointLight.position.copy(worldPosition);
+                        console.log(this.pointLight.position);
+                    }
+                    
+                    if (object instanceof THREE.Mesh) {
+                        object.castShadow = true;
+                        object.receiveShadow = true;
+                        
+                        if (object.material) {
+                            // Enhanced material settings
+                            if (object.material instanceof THREE.MeshStandardMaterial) {
+                                object.material.envMapIntensity = 1.5;
+                                object.material.metalness = object.material.metalness || 0;
+                                object.material.roughness = Math.max(0.3, object.material.roughness || 1);
+                                object.material.needsUpdate = true;
+                            }
+                        }
+                    }
+                });
+
+                // Center the room if needed
+                const box = new THREE.Box3().setFromObject(this.room);
+                const center = box.getCenter(new THREE.Vector3());
+                this.room.position.sub(center);
+            },
+            (progress: ProgressEvent) => {
+                console.log('Loading progress:', (progress.loaded / progress.total * 100) + '%');
+            },
+            (error: ErrorEvent) => {
+                console.error('Error loading room:', error);
+            }
+        );
     }
 
     private setupEventListeners(): void {
-        globalThis.addEventListener('resize', () => {
-            this.camera.aspect = globalThis.innerWidth / globalThis.innerHeight;
+        window.addEventListener('resize', () => {
+            this.camera.aspect = window.innerWidth / window.innerHeight;
             this.camera.updateProjectionMatrix();
-            this.renderer.setSize(globalThis.innerWidth, globalThis.innerHeight);
-        });
-
-        globalThis.addEventListener('click', (event) => {
-            this.mouse.x = (event.clientX / globalThis.innerWidth) * 2 - 1;
-            this.mouse.y = -(event.clientY / globalThis.innerHeight) * 2 + 1;
-
-            this.raycaster.setFromCamera(this.mouse, this.camera);
-
-            // Check intersections with all shapes
-            for (const { mesh, shape } of this.shapes) {
-                const intersects = this.raycaster.intersectObject(mesh);
-                if (intersects.length > 0) {
-                    shape.onClick();
-                }
-            }
+            this.renderer.setSize(window.innerWidth, window.innerHeight);
         });
     }
 
-    private loop(): void {
-        const currentTime = performance.now() / 1000;
-        let deltaTime = currentTime - this.lastTime;
-        
-        if (deltaTime > 0.1) {
-            deltaTime = 1/60;
-        }
-        
-        this.lastTime = currentTime;
-        
-        // Update all shapes
-        for (const { shape } of this.shapes) {
-            shape.update(deltaTime);
-        }
-        
+    private animate(): void {
+        requestAnimationFrame(() => this.animate());
+        this.controls.update();
         this.renderer.render(this.scene, this.camera);
-        globalThis.requestAnimationFrame(() => this.loop());
     }
 }
 
-new Wire();
+new RoomScene(); 

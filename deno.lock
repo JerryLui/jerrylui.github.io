@@ -262,7 +262,10 @@
     "https://esm.sh/three@0.162.0/denonext/three.mjs": "0a197d5d4e5919974aa511c332bcb888d95a9f0af6bc4ddeb36f2487ca3b4dbb",
     "https://esm.sh/three@0.162.0/examples/jsm/controls/OrbitControls.js": "941ecec5eb709ce083efcd44061432fc519b7af6c922983c9bfaabf80e50ce23",
     "https://unpkg.com/three@0.172.0/build/three.core.js": "c269806166c61cc3ddf6f19b05fc31a50f6bdfc85902eaed723e972f9bb3e163",
-    "https://unpkg.com/three@0.172.0/build/three.module.js": "2ac776db82c8cb8075433c63085028142f3e86e20016a0308b28943e8dbea238"
+    "https://unpkg.com/three@0.172.0/build/three.module.js": "2ac776db82c8cb8075433c63085028142f3e86e20016a0308b28943e8dbea238",
+    "https://unpkg.com/three@0.172.0/examples/jsm/controls/OrbitControls.js": "64088a1d7b040c980f61de9a5de74daa21b282eaabb853ed1d52dafa62ec0418",
+    "https://unpkg.com/three@0.172.0/examples/jsm/loaders/GLTFLoader.js": "89c18243091559a7c18e4f009612792ce603aa76338cc20587d83135fcdfc1a9",
+    "https://unpkg.com/three@0.172.0/examples/jsm/utils/BufferGeometryUtils.js": "1b9e1a6732b23adf87aea2cc430f6bc7eab7deacc7c195c2f51f53e06f4293e6"
   },
   "workspace": {
     "dependencies": [
