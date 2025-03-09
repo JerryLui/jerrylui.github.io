@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'https://unpkg.com/three@0.172.0/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'https://unpkg.com/three@0.172.0/examples/jsm/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'https://unpkg.com/three@0.172.0/examples/jsm/loaders/DRACOLoader.js';
 
 class RoomScene {
     private scene: THREE.Scene;
@@ -9,8 +10,7 @@ class RoomScene {
     private renderer: THREE.WebGLRenderer;
     private controls: OrbitControls;
     private room: THREE.Group | null = null;
-    private pointLight: THREE.PointLight;
-
+    private axesHelper: THREE.AxesHelper;
     constructor() {
         // Initialize scene
         this.scene = new THREE.Scene();
@@ -45,6 +45,7 @@ class RoomScene {
         
         // Add axes helper
         const axesHelper = new THREE.AxesHelper(1); // Length of 1 unit
+        this.axesHelper = axesHelper;
         this.scene.add(axesHelper);
         
         // Add lights
@@ -64,56 +65,105 @@ class RoomScene {
         // Increase ambient light intensity for better fill
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
         this.scene.add(ambientLight);
+    }
 
-        // Improved point light settings
-        const pointLight = new THREE.PointLight(0xffffff, 1.5, 100);
+    private setupWindowLight(object: THREE.Object3D): void {
+        const worldPosition = new THREE.Vector3();
+        object.getWorldPosition(worldPosition);
+        worldPosition.z -= 0.06;
+        worldPosition.y += 0.06;
+
+        const windowLight = new THREE.PointLight(0xffd28e, 1, 0);
+        windowLight.position.copy(worldPosition);
+        windowLight.castShadow = true;
+        windowLight.shadow.mapSize.width = 1024;
+        windowLight.shadow.mapSize.height = 1024;
+        windowLight.shadow.bias = -0.001;
+        this.scene.add(windowLight);
+    }
+
+    private setupLampLight(object: THREE.Object3D): void {
+        const worldPosition = new THREE.Vector3();
+        object.getWorldPosition(worldPosition);
+        worldPosition.y += 0.06;
+        worldPosition.z += 0.04;
+
+        // Point light setup
+        const pointLight = new THREE.PointLight(0xffd28e, .1, 5, 1);
         pointLight.castShadow = true;
-        pointLight.shadow.mapSize.width = 2048;
-        pointLight.shadow.mapSize.height = 2048;
+        pointLight.shadow.mapSize.width = 1024;
+        pointLight.shadow.mapSize.height = 1024;
         pointLight.shadow.bias = -0.001;
+        pointLight.position.copy(worldPosition);
+        
+        // Spotlight setup
+        const spotLight = new THREE.SpotLight(0xffd28e, 1);
+        spotLight.position.copy(worldPosition);
+        spotLight.angle = Math.PI / 4;
+        spotLight.penumbra = 0.2;
+        spotLight.decay = 2;
+        spotLight.distance = 10;
+        spotLight.castShadow = true;
+        spotLight.shadow.mapSize.width = 1024;
+        spotLight.shadow.mapSize.height = 1024;
+        spotLight.shadow.bias = -0.001;
+        
+        const targetObject = new THREE.Object3D();
+        this.scene.add(targetObject);
+        spotLight.target = targetObject;
+        targetObject.position.set(0, -1, 0);
+        
+        this.axesHelper.position.copy(worldPosition);
         this.scene.add(pointLight);
+        this.scene.add(spotLight);
+    }
 
-        // const hemiLight = new THREE.HemisphereLight('#ADD8E6', 0x080820, 0.1);
-        // hemiLight.position.set(0, 20, 0);
-        // this.scene.add(hemiLight);
-
-        this.pointLight = pointLight;
+    private enhanceMaterial(object: THREE.Mesh): void {
+        if (!object.material || !(object.material instanceof THREE.MeshStandardMaterial)) return;
+        
+        object.castShadow = true;
+        object.receiveShadow = true;
+        
+        object.material.envMapIntensity = 1.5;
+        object.material.metalness = object.material.metalness || 0;
+        object.material.roughness = Math.max(0.3, object.material.roughness || 1);
+        
+        if (object.name === 'Glass' || object.name.includes('Glass')) {
+            object.material.emissive = new THREE.Color(0xffd28e);
+            object.material.emissiveIntensity = 0.9;
+        }
+        
+        object.material.needsUpdate = true;
     }
 
     private loadRoom(): void {
         const loader = new GLTFLoader();
+        
+        // Setup Draco loader
+        const dracoLoader = new DRACOLoader();
+        dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
+        dracoLoader.setDecoderConfig({ type: 'js' });
+        loader.setDRACOLoader(dracoLoader);
+        
         loader.load(
             'room.glb',
             (gltf: { scene: THREE.Group }) => {
                 this.room = gltf.scene;
                 this.scene.add(this.room);
                 
-                // Improve material quality
                 this.room.traverse((object: THREE.Object3D) => {
-                    if (object.name === 'Lampshade' || object.name.includes('Lampshade')) {
-                        const worldPosition = new THREE.Vector3();
-                        object.getWorldPosition(worldPosition);
-                        this.pointLight.position.copy(worldPosition);
-                        console.log(this.pointLight.position);
+                    if (object.name === 'WindowGlass' || object.name.includes('WindowGlass')) {
+                        this.setupWindowLight(object);
+                    } else if (object.name === 'Lampshade' || object.name.includes('Lampshade')) {
+                        this.setupLampLight(object);
                     }
                     
                     if (object instanceof THREE.Mesh) {
-                        object.castShadow = true;
-                        object.receiveShadow = true;
-                        
-                        if (object.material) {
-                            // Enhanced material settings
-                            if (object.material instanceof THREE.MeshStandardMaterial) {
-                                object.material.envMapIntensity = 1.5;
-                                object.material.metalness = object.material.metalness || 0;
-                                object.material.roughness = Math.max(0.3, object.material.roughness || 1);
-                                object.material.needsUpdate = true;
-                            }
-                        }
+                        this.enhanceMaterial(object);
                     }
                 });
 
-                // Center the room if needed
+                // Center the room
                 const box = new THREE.Box3().setFromObject(this.room);
                 const center = box.getCenter(new THREE.Vector3());
                 this.room.position.sub(center);
