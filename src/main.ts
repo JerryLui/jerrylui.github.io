@@ -4,6 +4,65 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 
+class LoadingBar {
+  private container: HTMLDivElement;
+  private progressBar: HTMLDivElement;
+  private currentProgress: number = 0;
+  private targetProgress: number = 0;
+  private readonly MINIMUM_LOAD_TIME = 2000; // 2 seconds
+  private loadStartTime: number;
+  private isAnimating: boolean = true;
+  private onComplete?: () => void;
+
+  constructor() {
+    this.container = document.querySelector(".loading-bar") as HTMLDivElement;
+    this.progressBar = document.querySelector(
+      ".loading-progress"
+    ) as HTMLDivElement;
+    this.loadStartTime = performance.now();
+    this.animate();
+  }
+
+  updateProgress(percent: number): void {
+    this.targetProgress = percent;
+  }
+
+  private animate = () => {
+    if (!this.isAnimating) return;
+
+    // Automatically progress to 90% if no real progress
+    if (this.targetProgress < 90 && this.currentProgress < 90) {
+      this.targetProgress += 0.1;
+    }
+
+    // Smooth progress animation
+    this.currentProgress += (this.targetProgress - this.currentProgress) * 0.1;
+    this.progressBar.style.width = `${this.currentProgress}%`;
+
+    requestAnimationFrame(this.animate);
+  };
+
+  hide(onComplete: () => void): void {
+    this.onComplete = onComplete;
+    const elapsedTime = performance.now() - this.loadStartTime;
+    const remainingTime = Math.max(0, this.MINIMUM_LOAD_TIME - elapsedTime);
+
+    // Ensure we reach 100% smoothly
+    this.targetProgress = 100;
+
+    setTimeout(() => {
+      this.isAnimating = false;
+      this.container.style.display = "none";
+      this.onComplete?.();
+    }, remainingTime);
+  }
+
+  showError(): void {
+    this.container.style.backgroundColor = "rgba(255, 0, 0, 0.3)";
+    this.isAnimating = false;
+  }
+}
+
 class RoomScene {
   private scene: THREE.Scene;
   private camera: THREE.PerspectiveCamera;
@@ -31,6 +90,9 @@ class RoomScene {
   }[] = [];
   private readonly GRAVITY = -2.45; // Reduced from -4.91 to -2.45 for slower falling
   private readonly DAMPENING = 0.6; // Reduced from 0.85 to 0.6 for less bouncy
+  private loadingBar: LoadingBar;
+  private sceneLoaded: boolean = false;
+  private loadedModel?: THREE.Group;
 
   constructor() {
     // Initialize scene
@@ -79,6 +141,7 @@ class RoomScene {
 
     // Load room model
     this.raycaster = new THREE.Raycaster();
+    this.loadingBar = new LoadingBar();
     this.loadRoom();
 
     // Setup event listeners
@@ -180,56 +243,65 @@ class RoomScene {
     loader.load(
       "room.glb",
       (gltf: { scene: THREE.Group }) => {
-        this.room = gltf.scene;
-        this.scene.add(this.room);
-
-        // Find chair object after loading
-        this.chair = this.room.getObjectByName("Chair");
-        if (this.chair) {
-          this.setupChairInteraction();
-        }
-
-        // Find and setup bounceable objects
-        this.BOUNCEABLE_OBJECT_NAMES.forEach((name) => {
-          const object = this.room?.getObjectByName(name);
-          if (object) {
-            this.setupBounceableObject(object);
-          }
+        this.loadedModel = gltf.scene;
+        this.setupLoadedModel();
+        this.loadingBar.hide(() => {
+          this.room = this.loadedModel;
+          this.scene.add(this.room);
         });
-
-        this.room.traverse((object: THREE.Object3D) => {
-          if (
-            object.name === "WindowGlass" ||
-            object.name.includes("WindowGlass")
-          ) {
-            this.setupWindowLight(object);
-          } else if (
-            object.name === "TableLampShade" ||
-            object.name.includes("TableLampShade")
-          ) {
-            this.setupLampLight(object);
-          }
-
-          if (object instanceof THREE.Mesh) {
-            this.enhanceMaterial(object);
-          }
-        });
-
-        // Center the room
-        const box = new THREE.Box3().setFromObject(this.room);
-        const center = box.getCenter(new THREE.Vector3());
-        this.room.position.sub(center);
       },
-      (progress: ProgressEvent) => {
-        console.log(
-          "Loading progress:",
-          (progress.loaded / progress.total) * 100 + "%"
-        );
+      (progressEvent: ProgressEvent) => {
+        if (progressEvent.lengthComputable) {
+          const percent = (progressEvent.loaded / progressEvent.total) * 100;
+          this.loadingBar.updateProgress(percent);
+        }
       },
       (error: ErrorEvent) => {
         console.error("Error loading room:", error);
+        this.loadingBar.showError();
       }
     );
+  }
+
+  private setupLoadedModel(): void {
+    if (!this.loadedModel) return;
+
+    // Find chair object after loading
+    this.chair = this.loadedModel.getObjectByName("Chair");
+    if (this.chair) {
+      this.setupChairInteraction();
+    }
+
+    // Find and setup bounceable objects
+    this.BOUNCEABLE_OBJECT_NAMES.forEach((name) => {
+      const object = this.loadedModel?.getObjectByName(name);
+      if (object) {
+        this.setupBounceableObject(object);
+      }
+    });
+
+    this.loadedModel.traverse((object: THREE.Object3D) => {
+      if (
+        object.name === "WindowGlass" ||
+        object.name.includes("WindowGlass")
+      ) {
+        this.setupWindowLight(object);
+      } else if (
+        object.name === "TableLampShade" ||
+        object.name.includes("TableLampShade")
+      ) {
+        this.setupLampLight(object);
+      }
+
+      if (object instanceof THREE.Mesh) {
+        this.enhanceMaterial(object);
+      }
+    });
+
+    // Center the room
+    const box = new THREE.Box3().setFromObject(this.loadedModel);
+    const center = box.getCenter(new THREE.Vector3());
+    this.loadedModel.position.sub(center);
   }
 
   private setupChairInteraction(): void {
