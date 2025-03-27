@@ -119,7 +119,7 @@ class RoomScene {
     document.body.appendChild(this.renderer.domElement);
 
     // Setup camera and controls for isometric view
-    this.camera.position.set(7.07, 12, 7.07);
+    this.camera.position.set(4, 4, 4);
     this.camera.lookAt(0, 0, 0);
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
@@ -128,8 +128,8 @@ class RoomScene {
     this.controls.enablePan = false;
     this.controls.minPolarAngle = Math.PI / 4;
     this.controls.maxPolarAngle = Math.PI / 3;
-    this.controls.minAzimuthAngle = Math.PI / 4;
-    this.controls.maxAzimuthAngle = Math.PI / 4;
+    this.controls.minAzimuthAngle = Math.PI / 6;
+    this.controls.maxAzimuthAngle = Math.PI / 3;
 
     // Add axes helper
     // const axesHelper = new THREE.AxesHelper(1); // Length of 1 unit
