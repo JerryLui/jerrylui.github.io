@@ -270,6 +270,7 @@ class RoomScene {
     this.chair = this.loadedModel.getObjectByName("Chair");
     if (this.chair) {
       this.setupChairInteraction();
+      setTimeout(() => this.startChairRotation(), 1000);
     }
 
     // Find and setup bounceable objects
