@@ -2,6 +2,7 @@
   "imports": {
     "@std/http": "jsr:@std/http@^1.0.12",
     "three": "npm:three@^0.172.0",
+    "three/addons/": "npm:/three@^0.172.0/examples/jsm/",
     "~/": "./src/"
   },
   "tasks": {
@@ -10,6 +11,7 @@
     "dev": "deno run -A --watch=src/ src/build.ts & deno run -A src/serve.ts"
   },
   "compilerOptions": {
-    "lib": ["dom", "deno.window"]
+    "lib": ["dom", "deno.window"],
+    "types": ["npm:@types/three@^0.172.0"]
   }
 }
