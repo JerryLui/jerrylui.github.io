@@ -11,6 +11,27 @@ class RoomScene {
   private controls: OrbitControls;
   private room: THREE.Group | null = null;
   private axesHelper: THREE.AxesHelper;
+  private chair: THREE.Object3D | null = null;
+  private isRotating: boolean = false;
+  private targetRotation: number = 0;
+  private startRotation: number = 0;
+  private raycaster: THREE.Raycaster;
+  private readonly ROTATION_ANGLE = Math.PI / 6; // 30 degrees
+  private readonly ANIMATION_DURATION = 1000; // 1 second in ms
+  private animationStartTime: number = 0;
+  private readonly BOUNCEABLE_OBJECT_NAMES = [
+    "Mouse",
+    "Keyboard",
+    "KeyboardBase",
+  ];
+  private bounceableObjects: {
+    object: THREE.Object3D;
+    initialY: number;
+    velocity: number;
+  }[] = [];
+  private readonly GRAVITY = -2.45; // Reduced from -4.91 to -2.45 for slower falling
+  private readonly DAMPENING = 0.6; // Reduced from 0.85 to 0.6 for less bouncy
+
   constructor() {
     // Initialize scene
     this.scene = new THREE.Scene();
@@ -57,18 +78,19 @@ class RoomScene {
     this.setupLights();
 
     // Load room model
+    this.raycaster = new THREE.Raycaster();
     this.loadRoom();
 
     // Setup event listeners
     this.setupEventListeners();
 
     // Start animation loop
-    this.animate();
+    this.animate(performance.now());
   }
 
   private setupLights(): void {
     // Increase ambient light intensity for better fill
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     this.scene.add(ambientLight);
   }
 
@@ -161,6 +183,20 @@ class RoomScene {
         this.room = gltf.scene;
         this.scene.add(this.room);
 
+        // Find chair object after loading
+        this.chair = this.room.getObjectByName("Chair");
+        if (this.chair) {
+          this.setupChairInteraction();
+        }
+
+        // Find and setup bounceable objects
+        this.BOUNCEABLE_OBJECT_NAMES.forEach((name) => {
+          const object = this.room?.getObjectByName(name);
+          if (object) {
+            this.setupBounceableObject(object);
+          }
+        });
+
         this.room.traverse((object: THREE.Object3D) => {
           if (
             object.name === "WindowGlass" ||
@@ -196,16 +232,129 @@ class RoomScene {
     );
   }
 
+  private setupChairInteraction(): void {
+    const pointer = new THREE.Vector2();
+
+    window.addEventListener("click", (event) => {
+      pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
+      pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+      this.raycaster.setFromCamera(pointer, this.camera);
+      const intersects = this.raycaster.intersectObject(this.chair!, true);
+
+      if (intersects.length > 0 && !this.isRotating) {
+        this.startChairRotation();
+      }
+    });
+  }
+
+  private startChairRotation(): void {
+    if (!this.chair) return;
+
+    this.startRotation = this.chair.rotation.y;
+    // Determine next rotation based on current position
+    this.targetRotation =
+      Math.abs(this.startRotation) < 0.01 ? this.ROTATION_ANGLE : 0;
+    this.isRotating = true;
+    this.animationStartTime = performance.now();
+  }
+
+  private updateChairRotation(currentTime: number): void {
+    if (!this.chair || !this.isRotating) return;
+
+    const elapsed = currentTime - this.animationStartTime;
+    const progress = Math.min(elapsed / this.ANIMATION_DURATION, 1);
+
+    if (progress < 1) {
+      const easedProgress = this.easeInOutQuad(progress);
+      this.chair.rotation.y =
+        this.startRotation +
+        (this.targetRotation - this.startRotation) * easedProgress;
+    } else {
+      this.chair.rotation.y = this.targetRotation;
+      this.isRotating = false;
+    }
+  }
+
+  private setupBounceableObject(object: THREE.Object3D): void {
+    const worldPosition = new THREE.Vector3();
+    object.getWorldPosition(worldPosition);
+
+    // Store initial Y position and set initial elevated position
+    const initialY = worldPosition.y;
+    object.position.y = initialY + 0.3; // Reduced from 0.5 to 0.3 for lower initial height
+
+    this.bounceableObjects.push({
+      object,
+      initialY,
+      velocity: 0,
+    });
+  }
+
   private setupEventListeners(): void {
     window.addEventListener("resize", () => {
       this.camera.aspect = window.innerWidth / window.innerHeight;
       this.camera.updateProjectionMatrix();
       this.renderer.setSize(window.innerWidth, window.innerHeight);
     });
+
+    // Add click handler for bounceable objects
+    window.addEventListener("click", (event) => {
+      const pointer = new THREE.Vector2();
+      pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
+      pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+      this.raycaster.setFromCamera(pointer, this.camera);
+
+      for (const bounceable of this.bounceableObjects) {
+        const intersects = this.raycaster.intersectObject(
+          bounceable.object,
+          true
+        );
+        if (intersects.length > 0) {
+          bounceable.velocity = 0.8; // Reduced from 1.5 to 0.8 for slower initial velocity
+          break;
+        }
+      }
+    });
   }
 
-  private animate(): void {
-    requestAnimationFrame(() => this.animate());
+  private easeInOutQuad(t: number): number {
+    // Quadratic ease-in-out function
+    return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+  }
+
+  private updateBounceableObjects(deltaTime: number): void {
+    for (const bounceable of this.bounceableObjects) {
+      // Apply gravity
+      bounceable.velocity += this.GRAVITY * deltaTime;
+
+      // Update position
+      bounceable.object.position.y += bounceable.velocity * deltaTime;
+
+      // Bounce when hitting the ground
+      if (bounceable.object.position.y <= bounceable.initialY) {
+        bounceable.object.position.y = bounceable.initialY;
+        bounceable.velocity = -bounceable.velocity * this.DAMPENING;
+
+        // Stop if velocity is very small
+        if (Math.abs(bounceable.velocity) < 0.01) {
+          bounceable.velocity = 0;
+        }
+      }
+    }
+  }
+
+  private animate(currentTime: number): void {
+    requestAnimationFrame((time) => this.animate(time));
+
+    if (this.isRotating) {
+      this.updateChairRotation(currentTime);
+    }
+
+    // Update bounceable objects
+    this.updateBounceableObjects(0.016); // Assuming 60fps
+
     this.controls.update();
     this.renderer.render(this.scene, this.camera);
   }
