@@ -91,7 +91,6 @@ class RoomScene {
   private readonly GRAVITY = -2.45; // Reduced from -4.91 to -2.45 for slower falling
   private readonly DAMPENING = 0.6; // Reduced from 0.85 to 0.6 for less bouncy
   private loadingBar: LoadingBar;
-  private sceneLoaded: boolean = false;
   private loadedModel?: THREE.Group;
 
   constructor() {
@@ -113,8 +112,8 @@ class RoomScene {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.0;
+    this.renderer.toneMapping = THREE.NoToneMapping;
+    this.renderer.toneMappingExposure = 1.4;
     this.renderer.setPixelRatio(window.devicePixelRatio);
     document.body.appendChild(this.renderer.domElement);
 
@@ -153,7 +152,7 @@ class RoomScene {
 
   private setupLights(): void {
     // Increase ambient light intensity for better fill
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
     this.scene.add(ambientLight);
   }
 
@@ -241,13 +240,15 @@ class RoomScene {
     loader.setDRACOLoader(dracoLoader);
 
     loader.load(
-      "room.glb",
+      "room.glb?v=1.0.0",
       (gltf: { scene: THREE.Group }) => {
         this.loadedModel = gltf.scene;
         this.setupLoadedModel();
         this.loadingBar.hide(() => {
-          this.room = this.loadedModel;
-          this.scene.add(this.room);
+          this.room = this.loadedModel || null;
+          if (this.room) {
+            this.scene.add(this.room);
+          }
         });
       },
       (progressEvent: ProgressEvent) => {
@@ -256,7 +257,7 @@ class RoomScene {
           this.loadingBar.updateProgress(percent);
         }
       },
-      (error: ErrorEvent) => {
+      (error: unknown) => {
         console.error("Error loading room:", error);
         this.loadingBar.showError();
       }
@@ -267,7 +268,7 @@ class RoomScene {
     if (!this.loadedModel) return;
 
     // Find chair object after loading
-    this.chair = this.loadedModel.getObjectByName("Chair");
+    this.chair = this.loadedModel.getObjectByName("Chair") || null;
     if (this.chair) {
       this.setupChairInteraction();
       setTimeout(() => this.startChairRotation(), 1000);
