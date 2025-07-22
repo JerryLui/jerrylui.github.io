@@ -1,3 +1,10 @@
+/* Color variables */
+:root {
+  --color-red: #f04d4d;
+  --color-coral: #fb7185;
+  --color-orange: #f8b178;
+}
+
 /* Reset and base styles */
 * {
   margin: 0;
@@ -119,7 +126,7 @@ body {
 }
 
 .gradient-text {
-  background: linear-gradient(to right, #fb7185, #f87171);
+  background: linear-gradient(to right, var(--color-coral), var(--color-red));
   background-clip: text;
   -webkit-background-clip: text;
   color: transparent;
@@ -278,15 +285,15 @@ body {
 }
 
 .dot-red {
-  background-color: #f87171;
+  background-color: var(--color-red);
 }
 
 .dot-coral {
-  background-color: #fb7185;
+  background-color: var(--color-coral);
 }
 
 .dot-orange {
-  background-color: #fb923c;
+  background-color: var(--color-orange);
 }
 
 .feature-content h4 {
@@ -302,15 +309,15 @@ body {
 
 /* Icon colors */
 .icon-coral {
-  color: #fb7185;
+  color: var(--color-coral);
 }
 
 .icon-red {
-  color: #f87171;
+  color: var(--color-red);
 }
 
 .icon-orange {
-  color: #fb923c;
+  color: var(--color-orange);
 }
 
 /* Responsive adjustments */
