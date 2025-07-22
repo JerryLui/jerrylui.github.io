@@ -33,7 +33,7 @@ const translations: Translations = {
     advertMetricSatisfaction: "Satisfaction Guarantee",
     advertMetricAdoption: "Lower Operating Costs",
     advertMetricEngagement: "More Efficient Workflows",
-    featureWhyJerry: "Why Jerry?",
+    featureWhyJerry: "Why",
     featureHumanCentered: "User-Centered Design",
     featureHumanCenteredDesc:
       "Modular and adaptable solutions that grow with your business",
@@ -55,7 +55,7 @@ const translations: Translations = {
     advertMetricSatisfaction: "Nöjdhetsgaranti",
     advertMetricAdoption: "Lägre Driftkostnader",
     advertMetricEngagement: "Effektivare Arbetsflöden",
-    featureWhyJerry: "Varför Jerry?",
+    featureWhyJerry: "Varför",
     featureHumanCentered: "Uvecklar-centrerad Design",
     featureHumanCenteredDesc:
       "Modulära och anpassningsbara lösningar som växer med ditt företag",
@@ -189,8 +189,13 @@ class ConsultingPage {
     const consultationButton = document.querySelector(
       ".cta-button"
     ) as HTMLElement;
-    let baseHue = 240 + mouseX * 120; // Default: 240° to 360° (blue to red)
+
+    // Base colors: yellow (60°) to coral (16°) - flipped left to right
+    const coralHue = 16;
+    const yellowHue = 60;
+    let baseHue = yellowHue - mouseX * (yellowHue - coralHue); // Interpolate from yellow to coral
     let brightness = 65; // Default lightness
+    let saturation = 100; // High saturation for vibrant colors
 
     if (consultationButton) {
       const buttonRect = consultationButton.getBoundingClientRect();
@@ -212,23 +217,16 @@ class ConsultingPage {
       // Normalize distance (closer = lower value)
       const normalizedDistance = Math.min(distance / 1.4, 1);
 
-      // Shift hue towards yellow (60°) when closer to button
-      const yellowHue = 60;
-      baseHue =
-        baseHue + (yellowHue - baseHue) * (1 - normalizedDistance) * 0.7; // 70% influence
-
-      // Also make it brighter when closer
-      brightness = 50 + (1 - normalizedDistance) * 35; // Range: 50-85%
+      // Make it brighter when closer to button
+      brightness = 60 + (1 - normalizedDistance) * 25; // Range: 60-85%
+      saturation = 90 + (1 - normalizedDistance) * 10; // Range: 90-100%
     }
 
-    // Calculate final hue values
+    // Calculate final hue values - keep yellow to coral range
     const startHue = baseHue;
-    const endHue = baseHue + 60; // Create a 60° hue difference
+    const endHue = Math.max(coralHue, baseHue - 20); // Don't go below coral
 
-    // Fixed saturation for consistent vibrancy
-    const saturation = 80;
-
-    // Create HSL colors
+    // Create HSL colors matching coral to yellow theme
     const startColor = `hsl(${startHue}, ${saturation}%, ${brightness}%)`;
     const endColor = `hsl(${endHue}, ${saturation}%, ${brightness}%)`;
 

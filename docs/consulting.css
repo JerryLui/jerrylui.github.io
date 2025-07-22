@@ -1,8 +1,8 @@
-/* Color variables */
+/* Greyscale variables */
 :root {
-  --color-red: #f04d4d;
-  --color-coral: #fb7185;
-  --color-orange: #f8b178;
+  --color-light-grey: #e5e7eb;
+  --color-medium-grey: #9ca3af;
+  --color-dark-grey: #4b5563;
 }
 
 /* Reset and base styles */
@@ -13,7 +13,7 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
   margin: 0;
   overflow-x: hidden;
@@ -126,7 +126,7 @@ body {
 }
 
 .gradient-text {
-  background: linear-gradient(to right, var(--color-coral), var(--color-red));
+  background: linear-gradient(to right, coral, yellow);
   background-clip: text;
   -webkit-background-clip: text;
   color: transparent;
@@ -167,12 +167,12 @@ body {
 }
 
 .btn-primary {
-  background-color: #ef4444;
+  background-color: var(--color-dark-grey);
   color: white;
 }
 
 .btn-primary:hover {
-  background-color: #dc2626;
+  background-color: #1f2937;
 }
 
 .btn-secondary {
@@ -182,8 +182,8 @@ body {
 }
 
 .btn-secondary:hover {
-  border-color: #fb7185;
-  color: #fb7185;
+  border-color: var(--color-medium-grey);
+  color: var(--color-medium-grey);
 }
 
 /* Arrow icon animation */
@@ -266,34 +266,16 @@ body {
   flex-shrink: 0;
 }
 
-.feature-dot-red {
-  background-color: rgba(239, 68, 68, 0.2);
+.feature-bg-darker {
+  background-color: rgba(75, 85, 99, 0.2);
 }
 
-.feature-dot-coral {
-  background-color: rgba(251, 113, 133, 0.2);
+.feature-bg-dark {
+  background-color: rgba(156, 163, 175, 0.2);
 }
 
-.feature-dot-orange {
-  background-color: rgba(251, 146, 60, 0.2);
-}
-
-.dot-inner {
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: 50%;
-}
-
-.dot-red {
-  background-color: var(--color-red);
-}
-
-.dot-coral {
-  background-color: var(--color-coral);
-}
-
-.dot-orange {
-  background-color: var(--color-orange);
+.feature-bg-light {
+  background-color: rgba(229, 231, 235, 0.2);
 }
 
 .feature-content h4 {
@@ -307,17 +289,35 @@ body {
   line-height: 1.4;
 }
 
+.dot-inner {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+}
+
+.bg-darker {
+  background-color: var(--color-dark-grey);
+}
+
+.bg-dark {
+  background-color: var(--color-medium-grey);
+}
+
+.bg-light {
+  background-color: var(--color-light-grey);
+}
+
 /* Icon colors */
-.icon-coral {
-  color: var(--color-coral);
+.color-darker {
+  color: var(--color-medium-grey);
 }
 
-.icon-red {
-  color: var(--color-red);
+.color-dark {
+  color: var(--color-dark-grey);
 }
 
-.icon-orange {
-  color: var(--color-orange);
+.color-light-grey {
+  color: var(--color-light-grey);
 }
 
 /* Responsive adjustments */
@@ -362,7 +362,7 @@ body {
   font-size: 2.5rem;
   font-weight: 700;
   margin-bottom: 1rem;
-  background: linear-gradient(to right, #fb7185, #f04d4d);
+  background: linear-gradient(to right, white, var(--color-light-grey));
   background-clip: text;
   -webkit-background-clip: text;
   color: transparent;
@@ -407,8 +407,8 @@ body {
   height: 3px;
   background: linear-gradient(
     to right,
-    var(--color-coral),
-    var(--color-orange)
+    var(--color-medium-grey),
+    var(--color-light-grey)
   );
   opacity: 0;
   transition: opacity 0.3s;
@@ -416,7 +416,7 @@ body {
 
 .case-study-card:hover {
   transform: translateY(-0.25rem);
-  border-color: var(--color-coral);
+  border-color: var(--color-medium-grey);
 }
 
 .case-study-card:hover::before {
@@ -431,15 +431,15 @@ body {
 }
 
 .case-study-icon {
-  background: rgba(251, 113, 133, 0.1);
+  background: rgba(156, 163, 175, 0.1);
   border-radius: 0.5rem;
   padding: 0.75rem;
-  color: var(--color-coral);
+  color: var(--color-medium-grey);
   flex-shrink: 0;
 }
 
 .case-study-logo {
-  background: rgba(251, 113, 133, 0.1);
+  background: rgba(156, 163, 175, 0.1);
   border-radius: 0.5rem;
   padding: 0.75rem;
   flex-shrink: 0;
@@ -486,7 +486,7 @@ body {
   display: block;
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--color-coral);
+  color: white;
   margin-bottom: 0.25rem;
 }
 
