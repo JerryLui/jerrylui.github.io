@@ -29,7 +29,7 @@ const translations: Translations = {
     description:
       "I help you implement AI solutions with actual use cases. Transform complex workflows into intuitive, conversational experiences.",
     scheduleConsultation: "Schedule Consultation",
-    learnMore: "Learn More",
+    learnMore: "Case Studies",
     advertMetricSatisfaction: "Satisfaction Guarantee",
     advertMetricAdoption: "Lower Operating Costs",
     advertMetricEngagement: "More Efficient Workflows",
@@ -51,7 +51,7 @@ const translations: Translations = {
     description:
       "Jag hjälper dig implementera AI-lösningar som med faktiska användningsområden. Förvandla komplexa arbetsflöden till intuitiva, konversationsbaserade upplevelser.",
     scheduleConsultation: "Boka Konsultation",
-    learnMore: "Läs Mer",
+    learnMore: "Case Studies",
     advertMetricSatisfaction: "Nöjdhetsgaranti",
     advertMetricAdoption: "Lägre Driftkostnader",
     advertMetricEngagement: "Effektivare Arbetsflöden",
