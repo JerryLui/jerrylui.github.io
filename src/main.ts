@@ -95,18 +95,7 @@ class BouncingText {
     const element = document.createElement("a");
     element.href = href;
     element.textContent = text;
-    element.style.cssText = `
-      position: fixed;
-      color: white;
-      font-family: 'Arial', sans-serif;
-      font-size: 24px;
-      font-weight: bold;
-      text-decoration: none;
-      z-index: 1000;
-      user-select: none;
-      pointer-events: auto;
-      display: none;
-    `;
+    element.className = "bouncing-text";
 
     // Add hover event listeners to pause bouncing
     element.addEventListener("mouseenter", () => {
