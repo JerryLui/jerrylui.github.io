@@ -17,6 +17,7 @@ body {
     Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
   margin: 0;
   overflow-x: hidden;
+  background-color: #000000;
 }
 
 /* Main section styling */
@@ -126,7 +127,7 @@ body {
 }
 
 .gradient-text {
-  background: linear-gradient(to right, coral, yellow);
+  background: linear-gradient(to right, #ff7f50, rgb(222, 192, 115));
   background-clip: text;
   -webkit-background-clip: text;
   color: transparent;
@@ -322,6 +323,13 @@ body {
 
 /* Responsive adjustments */
 @media (max-width: 640px) {
+  .hero-section {
+    height: calc(
+      100vh + 10rem
+    ); /* Increase height to accommodate pushed down content */
+    padding-top: 10rem; /* Add padding to push content away from language toggle */
+  }
+
   .hero-title {
     font-size: 2rem;
   }
@@ -341,6 +349,10 @@ body {
 
   .feature-card {
     padding: 1rem;
+  }
+
+  .section-title {
+    margin-top: 1.5rem; /* Add extra top margin on mobile to clear the border line */
   }
 }
 

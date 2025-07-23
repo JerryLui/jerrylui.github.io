@@ -101,9 +101,6 @@ class ConsultingPage {
       button.addEventListener("mouseenter", this.handleButtonHover);
       button.addEventListener("mouseleave", this.handleButtonLeave);
     });
-
-    // Mouse tracking for gradient effect
-    document.addEventListener("mousemove", this.handleMouseMove);
   }
 
   private toggleLanguage(): void {
@@ -169,76 +166,6 @@ class ConsultingPage {
     const arrow = button.querySelector(".arrow-icon");
     if (arrow) {
       arrow.classList.remove("translate-x-1");
-    }
-  };
-
-  private handleMouseMove = (event: MouseEvent): void => {
-    const { clientX, clientY } = event;
-
-    // Use the hero section as the reference container for better responsiveness
-    const heroSection = document.querySelector(".hero-grid") as HTMLElement;
-    if (!heroSection) return;
-
-    const rect = heroSection.getBoundingClientRect();
-
-    // Normalize mouse position to 0-1 range relative to the hero section
-    const mouseX = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-    const mouseY = Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
-
-    // Calculate distance to consultation button for color control
-    const consultationButton = document.querySelector(
-      ".cta-button"
-    ) as HTMLElement;
-
-    // Base colors: yellow (60°) to coral (16°) - flipped left to right
-    const coralHue = 16;
-    const yellowHue = 60;
-    let baseHue = yellowHue - mouseX * (yellowHue - coralHue); // Interpolate from yellow to coral
-    let brightness = 65; // Default lightness
-    let saturation = 100; // High saturation for vibrant colors
-
-    if (consultationButton) {
-      const buttonRect = consultationButton.getBoundingClientRect();
-      const heroRect = heroSection.getBoundingClientRect();
-
-      // Get button center relative to hero section
-      const buttonCenterX =
-        (buttonRect.left + buttonRect.width / 2 - heroRect.left) /
-        heroRect.width;
-      const buttonCenterY =
-        (buttonRect.top + buttonRect.height / 2 - heroRect.top) /
-        heroRect.height;
-
-      // Calculate distance from mouse to button center
-      const distanceX = mouseX - buttonCenterX;
-      const distanceY = mouseY - buttonCenterY;
-      const distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
-
-      // Normalize distance (closer = lower value)
-      const normalizedDistance = Math.min(distance / 1.4, 1);
-
-      // Make it brighter when closer to button
-      brightness = 60 + (1 - normalizedDistance) * 25; // Range: 60-85%
-      saturation = 90 + (1 - normalizedDistance) * 10; // Range: 90-100%
-    }
-
-    // Calculate final hue values - keep yellow to coral range
-    const startHue = baseHue;
-    const endHue = Math.max(coralHue, baseHue - 20); // Don't go below coral
-
-    // Create HSL colors matching coral to yellow theme
-    const startColor = `hsl(${startHue}, ${saturation}%, ${brightness}%)`;
-    const endColor = `hsl(${endHue}, ${saturation}%, ${brightness}%)`;
-
-    // Update the gradient text element
-    const gradientElement = document.querySelector(
-      ".gradient-text"
-    ) as HTMLElement;
-    if (gradientElement) {
-      gradientElement.style.background = `linear-gradient(to bottom left, ${startColor}, ${endColor})`;
-      gradientElement.style.backgroundClip = "text";
-      gradientElement.style.webkitBackgroundClip = "text";
-      gradientElement.style.color = "transparent";
     }
   };
 }
