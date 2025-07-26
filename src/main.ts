@@ -70,6 +70,7 @@ class RoomScene {
   private controls: OrbitControls;
   private room: THREE.Group | null = null;
   private chair: THREE.Object3D | null = null;
+  private monitor: THREE.Object3D | null = null;
   private isRotating: boolean = false;
   private targetRotation: number = 0;
   private startRotation: number = 0;
@@ -91,6 +92,7 @@ class RoomScene {
   private readonly DAMPENING = 0.6; // Reduced from 0.85 to 0.6 for less bouncy
   private loadingBar: LoadingBar;
   private loadedModel?: THREE.Group;
+  private tooltip: HTMLDivElement;
 
   constructor() {
     // Initialize scene
@@ -105,6 +107,9 @@ class RoomScene {
       antialias: true,
       powerPreference: "high-performance",
     });
+
+    // Reference existing tooltip element
+    this.tooltip = document.getElementById("monitor-tooltip") as HTMLDivElement;
 
     // Setup renderer with improved quality
     this.renderer.setSize(window.innerWidth, window.innerHeight);
@@ -273,6 +278,13 @@ class RoomScene {
       setTimeout(() => this.startChairRotation(), 1000);
     }
 
+    // Find monitor object for glow animation
+    this.monitor = this.loadedModel.getObjectByName("Monitor") || null;
+    if (this.monitor) {
+      this.setupMonitorGlow();
+      this.setupMonitorInteraction();
+    }
+
     // Find and setup bounceable objects
     this.BOUNCEABLE_OBJECT_NAMES.forEach((name) => {
       const object = this.loadedModel?.getObjectByName(name);
@@ -330,6 +342,77 @@ class RoomScene {
       Math.abs(this.startRotation) < 0.01 ? this.ROTATION_ANGLE : 0;
     this.isRotating = true;
     this.animationStartTime = performance.now();
+  }
+
+  private setupMonitorGlow(): void {
+    if (!this.monitor) return;
+
+    // Set up emissive properties for all meshes in the monitor
+    this.monitor.traverse((object: THREE.Object3D) => {
+      if (object instanceof THREE.Mesh) {
+        const material = object.material;
+        if (material instanceof THREE.MeshStandardMaterial) {
+          // Set base emissive color (blue-ish screen glow)
+          material.emissive = new THREE.Color(0x4da6ff);
+          material.emissiveIntensity = 0.1;
+          material.needsUpdate = true;
+        }
+      }
+    });
+  }
+
+  private setupMonitorInteraction(): void {
+    // Attach listeners to the canvas element instead of window
+    this.renderer.domElement.addEventListener("mousemove", (event) => {
+      this.handleMonitorHover(event);
+    });
+    this.renderer.domElement.addEventListener("click", (event) => {
+      this.handleMonitorClick(event);
+    });
+  }
+
+  private handleMonitorHover(event: MouseEvent): void {
+    if (!this.monitor) return;
+
+    const pointer = new THREE.Vector2();
+    const rect = this.renderer.domElement.getBoundingClientRect();
+
+    // Calculate pointer position relative to canvas
+    pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+    this.raycaster.setFromCamera(pointer, this.camera);
+    const intersects = this.raycaster.intersectObject(this.monitor, true);
+
+    if (intersects.length > 0) {
+      // Show tooltip
+      this.tooltip.style.display = "block";
+      this.tooltip.style.left = event.clientX + 10 + "px";
+      this.tooltip.style.top = event.clientY - 30 + "px";
+      this.renderer.domElement.style.cursor = "pointer";
+    } else {
+      // Hide tooltip
+      this.tooltip.style.display = "none";
+      this.renderer.domElement.style.cursor = "default";
+    }
+  }
+
+  private handleMonitorClick(event: MouseEvent): void {
+    if (!this.monitor) return;
+
+    const pointer = new THREE.Vector2();
+    const rect = this.renderer.domElement.getBoundingClientRect();
+
+    // Calculate pointer position relative to canvas
+    pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+    this.raycaster.setFromCamera(pointer, this.camera);
+    const intersects = this.raycaster.intersectObject(this.monitor, true);
+
+    if (intersects.length > 0) {
+      window.location.href = "/consulting.html";
+    }
   }
 
   private updateChairRotation(currentTime: number): void {
@@ -418,6 +501,30 @@ class RoomScene {
     }
   }
 
+  private updateMonitorGlow(currentTime: number): void {
+    if (!this.monitor) return;
+
+    // Create a pulsing effect using sine wave
+    const pulseSpeed = 0.002; // Adjust for faster/slower pulsing
+    const baseIntensity = 0.05; // Reduced from 0.3
+    const pulseAmplitude = 0.05; // Reduced from 0.2
+    const intensity =
+      baseIntensity + Math.sin(currentTime * pulseSpeed) * pulseAmplitude;
+
+    // Apply the animated intensity to all monitor meshes
+    this.monitor.traverse((object: THREE.Object3D) => {
+      if (object instanceof THREE.Mesh) {
+        const material = object.material;
+        if (
+          material instanceof THREE.MeshStandardMaterial &&
+          material.emissive
+        ) {
+          material.emissiveIntensity = Math.max(0, intensity);
+        }
+      }
+    });
+  }
+
   private animate(currentTime: number): void {
     requestAnimationFrame((time) => this.animate(time));
 
@@ -427,6 +534,9 @@ class RoomScene {
 
     // Update bounceable objects
     this.updateBounceableObjects(0.016); // Assuming 60fps
+
+    // Update monitor glow animation
+    this.updateMonitorGlow(currentTime);
 
     this.controls.update();
     this.renderer.render(this.scene, this.camera);
