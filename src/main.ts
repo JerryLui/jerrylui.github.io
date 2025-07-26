@@ -63,156 +63,6 @@ class LoadingBar {
   }
 }
 
-class BouncingText {
-  private element: HTMLAnchorElement;
-  private position: { x: number; y: number };
-  private velocity: { x: number; y: number };
-  private colorTransition: number = 0;
-  private currentColorIndex: number = 0;
-  private isPaused: boolean = false;
-
-  private readonly COLORS = [
-    "#ff6b6b",
-    "#4ecdc4",
-    "#45b7d1",
-    "#96ceb4",
-    "#ffeaa7",
-    "#dda0dd",
-    "#98d8c8",
-    "#fd79a8",
-  ];
-  private readonly COLOR_TRANSITION_SPEED = 0.01;
-  private readonly VELOCITY = { x: 2, y: 1.5 };
-  private readonly INITIAL_POSITION = { x: 100, y: 100 };
-
-  constructor(text: string, href: string) {
-    this.position = { ...this.INITIAL_POSITION };
-    this.velocity = { ...this.VELOCITY };
-    this.element = this.createElement(text, href);
-  }
-
-  private createElement(text: string, href: string): HTMLAnchorElement {
-    const element = document.createElement("a");
-    element.href = href;
-    element.textContent = text;
-    element.className = "bouncing-text";
-
-    // Add hover event listeners to pause bouncing
-    element.addEventListener("mouseenter", () => {
-      this.isPaused = true;
-    });
-
-    element.addEventListener("mouseleave", () => {
-      this.isPaused = false;
-    });
-
-    document.body.appendChild(element);
-    return element;
-  }
-
-  show(): void {
-    this.element.style.display = "block";
-  }
-
-  hide(): void {
-    this.element.style.display = "none";
-  }
-
-  update(): void {
-    this.updatePosition();
-    this.updateColor();
-    this.applyStyles();
-  }
-
-  private updatePosition(): void {
-    if (this.isPaused) {
-      return;
-    }
-
-    const rect = this.element.getBoundingClientRect();
-    const { width, height } = rect;
-
-    this.position.x += this.velocity.x;
-    this.position.y += this.velocity.y;
-
-    // Handle horizontal bouncing
-    if (this.position.x <= 0 || this.position.x >= window.innerWidth - width) {
-      this.velocity.x = -this.velocity.x;
-      this.position.x = Math.max(
-        0,
-        Math.min(window.innerWidth - width, this.position.x)
-      );
-    }
-
-    // Handle vertical bouncing
-    if (
-      this.position.y <= 0 ||
-      this.position.y >= window.innerHeight - height
-    ) {
-      this.velocity.y = -this.velocity.y;
-      this.position.y = Math.max(
-        0,
-        Math.min(window.innerHeight - height, this.position.y)
-      );
-    }
-  }
-
-  private updateColor(): void {
-    this.colorTransition += this.COLOR_TRANSITION_SPEED;
-
-    if (this.colorTransition >= 1) {
-      this.colorTransition = 0;
-      this.currentColorIndex =
-        (this.currentColorIndex + 1) % this.COLORS.length;
-    }
-
-    const currentColor = this.hexToRgb(this.COLORS[this.currentColorIndex]);
-    const nextColorIndex = (this.currentColorIndex + 1) % this.COLORS.length;
-    const nextColor = this.hexToRgb(this.COLORS[nextColorIndex]);
-
-    if (currentColor && nextColor) {
-      const interpolatedColor = this.interpolateColor(
-        currentColor,
-        nextColor,
-        this.colorTransition
-      );
-      this.element.style.color = `rgb(${interpolatedColor.r}, ${interpolatedColor.g}, ${interpolatedColor.b})`;
-    }
-  }
-
-  private interpolateColor(
-    color1: { r: number; g: number; b: number },
-    color2: { r: number; g: number; b: number },
-    factor: number
-  ): { r: number; g: number; b: number } {
-    return {
-      r: Math.round(color1.r + (color2.r - color1.r) * factor),
-      g: Math.round(color1.g + (color2.g - color1.g) * factor),
-      b: Math.round(color1.b + (color2.b - color1.b) * factor),
-    };
-  }
-
-  private hexToRgb(hex: string): { r: number; g: number; b: number } | null {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    return result
-      ? {
-          r: parseInt(result[1], 16),
-          g: parseInt(result[2], 16),
-          b: parseInt(result[3], 16),
-        }
-      : null;
-  }
-
-  private applyStyles(): void {
-    this.element.style.left = `${this.position.x}px`;
-    this.element.style.top = `${this.position.y}px`;
-  }
-
-  destroy(): void {
-    this.element.remove();
-  }
-}
-
 class RoomScene {
   private scene: THREE.Scene;
   private camera: THREE.PerspectiveCamera;
@@ -241,7 +91,6 @@ class RoomScene {
   private readonly DAMPENING = 0.6; // Reduced from 0.85 to 0.6 for less bouncy
   private loadingBar: LoadingBar;
   private loadedModel?: THREE.Group;
-  private bouncingText: BouncingText;
 
   constructor() {
     // Initialize scene
@@ -292,9 +141,6 @@ class RoomScene {
     this.raycaster = new THREE.Raycaster();
     this.loadingBar = new LoadingBar();
     this.loadRoom();
-
-    // Create bouncing text
-    this.bouncingText = new BouncingText("Consulting", "/consulting.html");
 
     // Setup event listeners
     this.setupEventListeners();
@@ -402,8 +248,6 @@ class RoomScene {
           if (this.room) {
             this.scene.add(this.room);
           }
-          // Show bouncing text after loading completes
-          this.bouncingText.show();
         });
       },
       (progressEvent: ProgressEvent) => {
@@ -583,9 +427,6 @@ class RoomScene {
 
     // Update bounceable objects
     this.updateBounceableObjects(0.016); // Assuming 60fps
-
-    // Update bouncing text
-    this.bouncingText.update();
 
     this.controls.update();
     this.renderer.render(this.scene, this.camera);
