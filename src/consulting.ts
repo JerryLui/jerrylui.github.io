@@ -49,7 +49,7 @@ const translations: Translations = {
     humanFriendly: "Människovänliga",
     interfaces: "Gränssnitt",
     description:
-      "Jag hjälper dig implementera AI-lösningar som med faktiska användningsområden. Förvandla komplexa arbetsflöden till intuitiva, konversationsbaserade upplevelser.",
+      "Jag hjälper dig implementera AI-lösningar med faktiska användningsområden. Förvandla komplexa arbetsflöden till intuitiva, konversationsbaserade upplevelser.",
     scheduleConsultation: "Boka Konsultation",
     learnMore: "Case Studies",
     advertMetricSatisfaction: "Nöjdhetsgaranti",
